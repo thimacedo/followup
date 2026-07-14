@@ -116,3 +116,15 @@ model CardHistory {
   message    String?
   createdAt  DateTime @default(now())
 }
+
+// ===== MENSAGENS DO WHATSAPP (Worker Python Playwright) =====
+model WhatsappMessage {
+  id           Int      @id @default(autoincrement())
+  telefone     String
+  codigo       String
+  status       String   @default("pendente")
+  tentativas   Int      @default(0)
+  atualizado_em DateTime @default(now())
+
+  @@map("mensagens_whatsapp")
+}
