@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
-import { Leaf, Phone, MessageCircle, ArrowLeft, Loader2, ShieldCheck } from "lucide-react"
+import { Leaf, Phone, ArrowLeft, Loader2, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
 
 interface Props {
@@ -19,7 +19,6 @@ export function LoginScreen({ onSuccess, onLoungeAccess }: Props) {
   const [phone, setPhone] = useState("")
   const [code, setCode] = useState("")
   const [loading, setLoading] = useState(false)
-  const [whatsappLink, setWhatsappLink] = useState<string | null>(null)
   const [userName, setUserName] = useState<string>("")
   const [userId, setUserId] = useState<string>("")
   const [devCode, setDevCode] = useState<string | null>(null)
@@ -41,7 +40,6 @@ export function LoginScreen({ onSuccess, onLoungeAccess }: Props) {
         toast.error(data.error || "Erro ao gerar código")
         return
       }
-      setWhatsappLink(data.whatsappLink)
       setUserName(data.userName)
       setUserId(data.userId)
       if (data.devCode) setDevCode(data.devCode)
@@ -99,8 +97,8 @@ export function LoginScreen({ onSuccess, onLoungeAccess }: Props) {
             </CardTitle>
             <CardDescription>
               {step === "phone"
-                ? "Entre com seu telefone cadastrado. Enviaremos um código de acesso via WhatsApp."
-                : "Informe o código de 6 dígitos que enviamos no seu WhatsApp."}
+                ? "Entre com seu telefone cadastrado. Enviaremos um código de acesso por e-mail."
+                : "Informe o código de 6 dígitos que enviamos no seu e-mail."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -159,15 +157,6 @@ export function LoginScreen({ onSuccess, onLoungeAccess }: Props) {
                     </InputOTPGroup>
                   </InputOTP>
                 </div>
-
-                {whatsappLink && (
-                  <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" className="w-full border-emerald-300 text-emerald-700 hover:bg-emerald-50">
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Receber código no WhatsApp
-                    </Button>
-                  </a>
-                )}
 
                 <Button
                   className="w-full bg-emerald-600 hover:bg-emerald-700"

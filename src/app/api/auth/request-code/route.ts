@@ -1,11 +1,8 @@
-// POST /api/auth/request-code
-// Body: { phone: string }
-// Gera um código de 6 dígitos, salva no banco e retorna o link wa.me para o usuário
-// se auto-enviar o código (já que não temos integração WhatsApp).
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { generateAccessCode, normalizePhone, whatsappLink } from "@/lib/helpers"
+import { generateAccessCode, normalizePhone } from "@/lib/helpers"
 import { CODE_DURATION_MIN } from "@/lib/constants"
+import nodemailer from "nodemailer"
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,6 +21,9 @@ export async function POST(req: NextRequest) {
     if (!user.active) {
       return NextResponse.json({ error: "Usuário inativo. Procure a liderança." }, { status: 403 })
     }
+    if (!user.email) {
+      return NextResponse.json({ error: "Usuário não possui e-mail cadastrado." }, { status: 400 })
+    }
 
     const code = generateAccessCode()
     const expiresAt = new Date(Date.now() + CODE_DURATION_MIN * 60 * 1000)
@@ -31,13 +31,25 @@ export async function POST(req: NextRequest) {
       data: { userId: user.id, code, expiresAt },
     })
 
-    const message = `*CCVideira Capim Macio - Follow-up*\n\nSeu código de acesso é: *${code}*\n\nEle expira em ${CODE_DURATION_MIN} minutos.`
-    const waLink = whatsappLink(normalized, message)
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_SERVER_HOST,
+      port: Number(process.env.EMAIL_SERVER_PORT),
+      auth: {
+        user: process.env.EMAIL_SERVER_USER,
+        pass: process.env.EMAIL_SERVER_PASSWORD,
+      },
+    })
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: user.email,
+      subject: "Código de acesso",
+      text: `Seu código de acesso é: ${code}`,
+    })
 
     return NextResponse.json({
       ok: true,
-      message: `Código gerado. Toque no botão abaixo para abrir o WhatsApp e receber seu código.`,
-      whatsappLink: waLink,
+      message: `Código gerado. Verifique seu e-mail para receber o código.`,
       userName: user.name,
       userId: user.id,
     })
