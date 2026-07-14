@@ -63,3 +63,5 @@ __pycache__/
 agente_status.json
 config/credentials/
 nul
+/prisma/db/
+.trash/
