@@ -29,21 +29,28 @@ export async function POST(req: NextRequest) {
       data: { userId: user.id, code, expiresAt },
     })
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_SERVER_HOST,
-      port: Number(process.env.EMAIL_SERVER_PORT),
-      auth: {
-        user: process.env.EMAIL_SERVER_USER,
-        pass: process.env.EMAIL_SERVER_PASSWORD,
-      },
-    })
+    if (!process.env.EMAIL_SERVER_HOST) {
+      console.log(`\n========================================`)
+      console.log(`[DEV MODE] Código de acesso gerado para ${user.email}`)
+      console.log(`CÓDIGO: ${code}`)
+      console.log(`========================================\n`)
+    } else {
+      const transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_SERVER_HOST,
+        port: Number(process.env.EMAIL_SERVER_PORT),
+        auth: {
+          user: process.env.EMAIL_SERVER_USER,
+          pass: process.env.EMAIL_SERVER_PASSWORD,
+        },
+      })
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to: user.email,
-      subject: "Código de acesso",
-      text: `Seu código de acesso é: ${code}`,
-    })
+      await transporter.sendMail({
+        from: process.env.EMAIL_FROM,
+        to: user.email!,
+        subject: "Código de acesso",
+        text: `Seu código de acesso é: ${code}`,
+      })
+    }
 
     return NextResponse.json({
       ok: true,
