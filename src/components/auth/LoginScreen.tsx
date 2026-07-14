@@ -184,7 +184,7 @@ export function LoginScreen({ onSuccess, onLoungeAccess }: Props) {
         </Card>
 
         <p className="text-center text-xs text-slate-500 mt-6 px-4">
-          Sem senha para lembrar. A cada acesso, um código novo é gerado e enviado via WhatsApp.
+          Sem senha para lembrar. A cada acesso, um código novo é gerado e enviado por e-mail.
         </p>
       </div>
     </div>
