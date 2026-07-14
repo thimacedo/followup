@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   
   // Admin cadastra qualquer um; supervisor cadastra apenas voluntários do seu dept
   const body = await req.json()
-  const { name, phone, role, departmentIds, gender } = body
+  const { name, phone, email, role, departmentIds, gender } = body
 
   if (!name || !phone) {
     return NextResponse.json({ error: "Nome e telefone são obrigatórios" }, { status: 400 })
@@ -78,11 +78,20 @@ export async function POST(req: NextRequest) {
   if (existing) {
     return NextResponse.json({ error: "Telefone já cadastrado" }, { status: 400 })
   }
+  
+  const normalizedEmail = email ? email.toLowerCase().trim() : null
+  if (normalizedEmail) {
+    const existingEmail = await db.user.findUnique({ where: { email: normalizedEmail } })
+    if (existingEmail) {
+      return NextResponse.json({ error: "E-mail já cadastrado" }, { status: 400 })
+    }
+  }
 
   const newUser = await db.user.create({
     data: {
       name,
       phone: normalizedPhone,
+      email: normalizedEmail,
       role: finalRole,
       gender: gender || null,
       departments: {

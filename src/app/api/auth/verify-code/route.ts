@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
         name: user.name,
         role: user.role,
         phone: user.phone,
+        email: user.email,
       },
     })
   } catch (e) {

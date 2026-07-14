@@ -6,24 +6,22 @@ import nodemailer from "nodemailer"
 
 export async function POST(req: NextRequest) {
   try {
-    const { phone } = await req.json()
-    if (!phone || typeof phone !== "string") {
-      return NextResponse.json({ error: "Telefone é obrigatório" }, { status: 400 })
+    const { email } = await req.json()
+    if (!email || typeof email !== "string") {
+      return NextResponse.json({ error: "E-mail é obrigatório" }, { status: 400 })
     }
-    const normalized = normalizePhone(phone)
-    const user = await db.user.findUnique({ where: { phone: normalized } })
+    const normalizedEmail = email.toLowerCase().trim()
+    const user = await db.user.findFirst({ where: { email: normalizedEmail } })
     if (!user) {
       return NextResponse.json(
-        { error: "Telefone não cadastrado. Solicite seu cadastro ao supervisor ou admin." },
+        { error: "E-mail não cadastrado. Solicite seu cadastro ao supervisor ou admin." },
         { status: 404 }
       )
     }
     if (!user.active) {
       return NextResponse.json({ error: "Usuário inativo. Procure a liderança." }, { status: 403 })
     }
-    if (!user.email) {
-      return NextResponse.json({ error: "Usuário não possui e-mail cadastrado." }, { status: 400 })
-    }
+
 
     const code = generateAccessCode()
     const expiresAt = new Date(Date.now() + CODE_DURATION_MIN * 60 * 1000)

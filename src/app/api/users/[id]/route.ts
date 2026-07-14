@@ -22,6 +22,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Telefone já cadastrado" }, { status: 400 })
     }
   }
+  if (body.email !== undefined) {
+    if (body.email) {
+      data.email = body.email.toLowerCase().trim()
+      const existing = await db.user.findUnique({ where: { email: data.email } })
+      if (existing && existing.id !== id) {
+        return NextResponse.json({ error: "E-mail já cadastrado" }, { status: 400 })
+      }
+    } else {
+      data.email = null
+    }
+  }
   if (body.gender !== undefined) data.gender = body.gender || null
   
   // Apenas admin muda role e departamentos

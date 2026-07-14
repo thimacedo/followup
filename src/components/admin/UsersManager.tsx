@@ -23,7 +23,7 @@ export function UsersManager() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<any | null>(null)
-  const [form, setForm] = useState({ name: "", phone: "", role: ROLES.VOLUNTARIO, departmentIds: [] as string[], gender: "M" })
+  const [form, setForm] = useState({ name: "", phone: "", email: "", role: ROLES.VOLUNTARIO, departmentIds: [] as string[], gender: "M" })
 
   const isAdmin = user.role === ROLES.ADMIN
 
@@ -54,6 +54,7 @@ export function UsersManager() {
     setForm({
       name: "",
       phone: "",
+      email: "",
       role: ROLES.VOLUNTARIO,
       departmentIds: initialDepts,
       gender: "M",
@@ -67,6 +68,7 @@ export function UsersManager() {
     setForm({
       name: u.name,
       phone: u.phone,
+      email: u.email || "",
       role: u.role,
       departmentIds: userDepts,
       gender: u.gender || "M",
@@ -103,7 +105,7 @@ export function UsersManager() {
           toast.error(d.error || "Erro ao cadastrar")
           return
         }
-        toast.success("Usuário cadastrado! Ele já pode acessar com o telefone.")
+        toast.success("Usuário cadastrado! Ele já pode acessar com o e-mail.")
       }
       setDialogOpen(false)
       load()
@@ -230,7 +232,7 @@ export function UsersManager() {
             <DialogDescription>
               {editingUser
                 ? "Atualize os dados do membro da equipe."
-                : "Cadastre um novo voluntário, supervisor ou membro do Lounge. Ele acessará o sistema via WhatsApp, sem senha."}
+                : "Cadastre um novo voluntário, supervisor ou membro do Lounge. Ele acessará o sistema via e-mail, sem senha."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -241,6 +243,10 @@ export function UsersManager() {
             <div className="space-y-1.5">
               <Label>Telefone / WhatsApp *</Label>
               <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(84) 99999-9999" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>E-mail *</Label>
+              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="seu@email.com" />
             </div>
             {isAdmin && (
               <div className="space-y-1.5">

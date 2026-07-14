@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
-import { Leaf, Phone, ArrowLeft, Loader2, ShieldCheck } from "lucide-react"
+import { Leaf, Mail, ArrowLeft, Loader2, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
 
 interface Props {
@@ -15,8 +15,8 @@ interface Props {
 }
 
 export function LoginScreen({ onSuccess, onLoungeAccess }: Props) {
-  const [step, setStep] = useState<"phone" | "code">("phone")
-  const [phone, setPhone] = useState("")
+  const [step, setStep] = useState<"email" | "code">("email")
+  const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
   const [loading, setLoading] = useState(false)
   const [userName, setUserName] = useState<string>("")
@@ -24,8 +24,8 @@ export function LoginScreen({ onSuccess, onLoungeAccess }: Props) {
   const [devCode, setDevCode] = useState<string | null>(null)
 
   async function requestCode() {
-    if (!phone.trim()) {
-      toast.error("Digite seu telefone")
+    if (!email.trim()) {
+      toast.error("Digite seu e-mail")
       return
     }
     setLoading(true)
@@ -33,7 +33,7 @@ export function LoginScreen({ onSuccess, onLoungeAccess }: Props) {
       const res = await fetch("/api/auth/request-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ email }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -96,30 +96,30 @@ export function LoginScreen({ onSuccess, onLoungeAccess }: Props) {
               Acesso ao Sistema
             </CardTitle>
             <CardDescription>
-              {step === "phone"
-                ? "Entre com seu telefone cadastrado. Enviaremos um código de acesso por e-mail."
+              {step === "email"
+                ? "Entre com seu e-mail cadastrado. Enviaremos um código de acesso para você."
                 : "Informe o código de 6 dígitos que enviamos no seu e-mail."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {step === "phone" ? (
+            {step === "email" ? (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone (WhatsApp)</Label>
+                  <Label htmlFor="email">E-mail</Label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="(84) 99999-9999"
+                      id="email"
+                      type="email"
+                      placeholder="seu@email.com"
                       className="pl-10"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && requestCode()}
                     />
                   </div>
                   <p className="text-xs text-slate-500">
-                    Use o mesmo número que foi cadastrado pelo seu supervisor.
+                    Use o e-mail que foi cadastrado pelo seu supervisor.
                   </p>
                 </div>
                 <Button
@@ -170,7 +170,7 @@ export function LoginScreen({ onSuccess, onLoungeAccess }: Props) {
                   variant="ghost"
                   className="w-full"
                   onClick={() => {
-                    setStep("phone")
+                    setStep("email")
                     setCode("")
                     setDevCode(null)
                   }}
