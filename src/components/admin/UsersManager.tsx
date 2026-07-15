@@ -15,6 +15,7 @@ import { ROLE_LABELS, ROLES } from "@/lib/constants"
 import { formatPhoneLocal, whatsappLink, initials, avatarColor } from "@/lib/helpers"
 import { useAppStore } from "@/lib/store"
 import { toast } from "sonner"
+import Papa from "papaparse"
 
 export function UsersManager() {
   const user = useAppStore((s) => s.user)!
@@ -49,7 +50,7 @@ export function UsersManager() {
   function openNew() {
     setEditingUser(null)
     const initialDepts = user.role === ROLES.SUPERVISOR
-      ? (user.departments?.map((d: any) => d.id) || [user.departmentId].filter(Boolean) as string[])
+      ? (user.departments?.map((d: any) => d.id) || [])
       : []
     setForm({
       name: "",
@@ -143,6 +144,67 @@ export function UsersManager() {
     } catch {}
   }
 
+  function importCSV(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const rows = results.data as any[]
+        if (rows.length === 0) {
+          toast.error("Arquivo CSV vazio")
+          return
+        }
+        
+        const mappedUsers = rows.map(r => ({
+          name: r["Nome"] || r["name"],
+          phone: r["Telefone"] || r["phone"],
+          email: r["Email"] || r["email"],
+          role: r["Papel"] || r["role"] || ROLES.VOLUNTARIO,
+          gender: r["Sexo"] || r["gender"] || "M",
+        })).filter(u => u.name && u.phone)
+
+        if (mappedUsers.length === 0) {
+          toast.error("Nenhum usuário válido encontrado. Verifique as colunas (Nome, Telefone).")
+          return
+        }
+
+        if (!confirm(`Confirmar importação de ${mappedUsers.length} usuários?`)) return
+        
+        setLoading(true)
+        try {
+          const res = await fetch("/api/users/bulk", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ users: mappedUsers })
+          })
+          const data = await res.json()
+          if (!res.ok) {
+            toast.error(data.error || "Erro ao importar")
+            return
+          }
+          toast.success(`${data.successCount} usuários importados com sucesso!`)
+          if (data.errorCount > 0) {
+            toast.warning(`${data.errorCount} falharam. (ex: email duplicado)`)
+            console.error(data.errors)
+          }
+          load()
+        } catch {
+          toast.error("Erro na comunicação com servidor")
+          setLoading(false)
+        }
+      },
+      error: () => {
+        toast.error("Erro ao ler o arquivo CSV")
+      }
+    })
+    
+    // reset the input
+    e.target.value = ""
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -153,9 +215,19 @@ export function UsersManager() {
           </CardTitle>
           <CardDescription>Gerencie voluntários, supervisores e Lounge</CardDescription>
         </div>
-        <Button onClick={openNew} className="bg-emerald-600 hover:bg-emerald-700">
-          <UserPlus className="w-4 h-4 mr-2" /> Novo
-        </Button>
+        <div className="flex gap-2">
+          {isAdmin && (
+            <>
+              <input type="file" accept=".csv" id="import-users-csv" className="hidden" onChange={importCSV} />
+              <Button variant="outline" onClick={() => document.getElementById('import-users-csv')?.click()}>
+                Importar CSV
+              </Button>
+            </>
+          )}
+          <Button onClick={openNew} className="bg-emerald-600 hover:bg-emerald-700">
+            <UserPlus className="w-4 h-4 mr-2" /> Novo
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -251,7 +323,7 @@ export function UsersManager() {
             {isAdmin && (
               <div className="space-y-1.5">
                 <Label>Papel</Label>
-                <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
+                <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as any })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(ROLE_LABELS).map(([k, v]) => (

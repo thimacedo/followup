@@ -11,12 +11,18 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { UserPlus, Loader2, Search, Phone, Mail, Calendar, Users as UsersIcon, Home, Heart, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import { formatPhoneLocal } from "@/lib/helpers"
+import { useAppStore } from "@/lib/store"
+import { ROLES } from "@/lib/constants"
+import Papa from "papaparse"
 
 interface Props {
   onCreated?: () => void
 }
 
 export function RecepcaoForm({ onCreated }: Props) {
+  const user = useAppStore(s => s.user)
+  const isAdmin = user?.role === ROLES.ADMIN
+  
   const [loading, setLoading] = useState(false)
   const [searchPhone, setSearchPhone] = useState("")
   const [recentVisitors, setRecentVisitors] = useState<any[]>([])
@@ -109,18 +115,92 @@ export function RecepcaoForm({ onCreated }: Props) {
     loadRecent()
   })
 
+  function importCSV(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const rows = results.data as any[]
+        if (rows.length === 0) {
+          toast.error("Arquivo CSV vazio")
+          return
+        }
+        
+        const mappedVisitors = rows.map(r => ({
+          name: r["Nome"] || r["name"],
+          phone: r["Telefone"] || r["phone"],
+          email: r["Email"] || r["email"],
+          birthDate: r["DataNascimento"] || r["birthDate"] || null,
+          gender: r["Sexo"] || r["gender"] || "M",
+          maritalStatus: r["EstadoCivil"] || r["maritalStatus"],
+          address: r["Endereco"] || r["address"],
+        })).filter(u => u.name && u.phone)
+
+        if (mappedVisitors.length === 0) {
+          toast.error("Nenhum visitante válido encontrado. Verifique as colunas (Nome, Telefone).")
+          return
+        }
+
+        if (!confirm(`Confirmar importação de ${mappedVisitors.length} visitantes?`)) return
+        
+        setLoading(true)
+        try {
+          const res = await fetch("/api/visitors/bulk", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ visitors: mappedVisitors })
+          })
+          const data = await res.json()
+          if (!res.ok) {
+            toast.error(data.error || "Erro ao importar")
+            return
+          }
+          toast.success(`${data.successCount} visitantes processados com sucesso!`)
+          if (data.errorCount > 0) {
+            toast.warning(`${data.errorCount} falharam.`)
+          }
+          loadRecent()
+        } catch {
+          toast.error("Erro na comunicação com servidor")
+        } finally {
+          setLoading(false)
+        }
+      },
+      error: () => {
+        toast.error("Erro ao ler o arquivo CSV")
+      }
+    })
+    
+    e.target.value = ""
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Formulário */}
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-emerald-600" />
-            Cadastro de Visitante
-          </CardTitle>
-          <CardDescription>
-            Preencha os dados básicos. O sistema vai direcionar automaticamente para o departamento certo.
-          </CardDescription>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-emerald-600" />
+                Cadastro de Visitante
+              </CardTitle>
+              <CardDescription>
+                Preencha os dados básicos. O sistema vai direcionar automaticamente para o departamento certo.
+              </CardDescription>
+            </div>
+            {isAdmin && (
+              <div>
+                <input type="file" accept=".csv" id="import-visitors-csv" className="hidden" onChange={importCSV} />
+                <Button variant="outline" size="sm" onClick={() => document.getElementById('import-visitors-csv')?.click()}>
+                  Importar CSV
+                </Button>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

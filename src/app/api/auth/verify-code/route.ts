@@ -1,55 +1,27 @@
 // POST /api/auth/verify-code
-// Body: { userId, code }
+// Body: { userId, code, rememberMe }
 // Valida o código e cria a sessão (cookie)
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db"
 import { setSessionCookie } from "@/lib/session"
+import { AuthService } from "@/services/AuthService"
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, code } = await req.json()
-    if (!userId || !code) {
-      return NextResponse.json({ error: "Dados incompletos" }, { status: 400 })
-    }
-    const user = await db.user.findUnique({ where: { id: userId } })
-    if (!user || !user.active) {
-      return NextResponse.json({ error: "Usuário inválido" }, { status: 404 })
-    }
+    const { userId, code, rememberMe = false } = await req.json()
+    
+    const result = await AuthService.verifyAccessCode(userId, code)
 
-    // Pega o código mais recente não usado e não expirado
-    const accessCode = await db.accessCode.findFirst({
-      where: {
-        userId: user.id,
-        code: code.trim(),
-        used: false,
-        expiresAt: { gt: new Date() },
-      },
-      orderBy: { createdAt: "desc" },
-    })
-
-    if (!accessCode) {
-      return NextResponse.json({ error: "Código inválido ou expirado" }, { status: 401 })
-    }
-
-    await db.accessCode.update({
-      where: { id: accessCode.id },
-      data: { used: true, consumedAt: new Date() },
-    })
-
-    await setSessionCookie(user.id)
+    await setSessionCookie(result.user.id, rememberMe)
 
     return NextResponse.json({
       ok: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        role: user.role,
-        phone: user.phone,
-        email: user.email,
-      },
+      user: result.user,
     })
-  } catch (e) {
+  } catch (e: any) {
     console.error(e)
-    return NextResponse.json({ error: "Erro interno" }, { status: 500 })
+    const status = e.message.includes("incompletos") ? 400
+                 : e.message.includes("inválido") || e.message.includes("expirado") ? 401
+                 : 500
+    return NextResponse.json({ error: e.message || "Erro interno" }, { status })
   }
 }

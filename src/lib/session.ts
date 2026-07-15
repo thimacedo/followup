@@ -1,7 +1,7 @@
 // Sessão - cookie simples + token assinado
 import { cookies } from "next/headers"
 import { db } from "./db"
-import { SESSION_DURATION } from "./constants"
+import { SESSION_DURATION, SESSION_DURATION_LONG } from "./constants"
 import crypto from "crypto"
 
 const SESSION_SECRET = process.env.SESSION_SECRET || "ccvideira-followup-secret-dev-key-change"
@@ -20,8 +20,8 @@ export function verifyToken(token: string): { userId: string; ts: number } | nul
     const data = `${userId}.${ts}`
     const expected = crypto.createHmac("sha256", SESSION_SECRET).update(data).digest("hex")
     if (expected !== hmac) return null
-    // expiração
-    if (Date.now() / 1000 - ts > SESSION_DURATION) return null
+    // expiração - aceita ambas durações, a mais longa define o limite final de parse
+    if (Date.now() / 1000 - ts > SESSION_DURATION_LONG) return null
     return { userId, ts }
   } catch {
     return null
@@ -42,13 +42,14 @@ export async function getSessionUser() {
   return user
 }
 
-export async function setSessionCookie(userId: string) {
+export async function setSessionCookie(userId: string, rememberMe: boolean = false) {
   const token = signToken({ userId, ts: Math.floor(Date.now() / 1000) })
   const cookieStore = await cookies()
+  const maxAge = rememberMe ? SESSION_DURATION_LONG : SESSION_DURATION
   cookieStore.set("ccv_session", token, {
     httpOnly: true,
     sameSite: "lax",
-    maxAge: SESSION_DURATION,
+    maxAge: maxAge,
     path: "/",
   })
 }

@@ -44,7 +44,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const body = await req.json()
   const { status, volunteerId, supervisorId, priority, notes, lastContactAt, nextActionAt, addHistory, departmentId } = body
 
-  const card = await db.followUpCard.findUnique({ where: { id } })
+  const card = await db.followUpCard.findUnique({ 
+    where: { id },
+    include: { visitor: true }
+  })
   if (!card) return NextResponse.json({ error: "Card não encontrado" }, { status: 404 })
 
   // Permissões:
@@ -79,7 +82,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         if (!volunteer) return NextResponse.json({ error: "Voluntário não encontrado" }, { status: 404 })
 
         // Validação de gênero inegociável
-        if (volunteer.gender && card.visitor.gender && volunteer.gender !== card.visitor.gender) {
+        if (volunteer.gender && card.visitor?.gender && volunteer.gender !== card.visitor.gender) {
           return NextResponse.json({
             error: `Regra de Gênero: Voluntário do sexo ${volunteer.gender === "M" ? "Masculino" : "Feminino"} não pode acompanhar visitante do sexo ${card.visitor.gender === "M" ? "Masculino" : "Feminino"}.`,
           }, { status: 400 })
@@ -116,7 +119,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       
       const newSupervisor = await db.user.findFirst({
         where: {
-          role: ROLES.SUPERVISOR,
+          role: "supervisor",
           active: true,
           departments: {
             some: { id: departmentId },
@@ -174,7 +177,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Voluntário só pode mexer nos cards que lhe pertencem OU sem dono do seu dept
   if (isVoluntario) {
     const isMyCard = card.volunteerId === user.id
-    const isFreeInMyDept = !card.volunteerId && card.departmentId === user.departmentId
+    const isFreeInMyDept = !card.volunteerId && user.departments?.some(d => d.id === card.departmentId)
     if (!isMyCard && !isFreeInMyDept) {
       return NextResponse.json({ error: "Sem permissão para editar este card" }, { status: 403 })
     }

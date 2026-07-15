@@ -1,128 +1,44 @@
 // /api/cards
-// GET - lista cards de acordo com o papel do usuário:
-//   voluntario → apenas seus cards (incluindo sem voluntário do seu dept)
-//   supervisor → cards dos seus departamentos
-//   admin → todos
-//   recepcao → todos (somente leitura)
+// GET - lista cards de acordo com o papel do usuário
+// POST - cria card manualmente
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db"
 import { getSessionUser } from "@/lib/session"
-import { ROLES } from "@/lib/constants"
+import { CardService } from "@/services/CardService"
 
 export async function GET(req: NextRequest) {
   const user = await getSessionUser()
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
-  const statusFilter = searchParams.get("status") || ""
-  const deptFilter = searchParams.get("department") || ""
-  const search = searchParams.get("search") || ""
-  const onlyMine = searchParams.get("mine") === "1"
-
-  const userDeptIds = (user as any).departments?.map((d: any) => d.id) || []
-  let where: any = {}
-
-  if (user.role === ROLES.VOLUNTARIO) {
-    // Voluntário vê: cards atribuídos a ele + cards sem voluntário do seu dept
-    if (onlyMine) {
-      where.volunteerId = user.id
-    } else {
-      where.OR = [
-        { volunteerId: user.id },
-        { volunteerId: null, departmentId: { in: userDeptIds.length > 0 ? userDeptIds : ["___none___"] } },
-      ]
-    }
-  } else if (user.role === ROLES.SUPERVISOR) {
-    // Supervisor vê: todos os cards dos seus departamentos
-    if (userDeptIds.length > 0) {
-      where.departmentId = { in: userDeptIds }
-    }
-    // Se supervisor não tem dept, vê tudo (supervisor geral)
-  }
-  // admin e recepcao: vê tudo
-
-  if (statusFilter) {
-    where.status = statusFilter
-  }
-  if (deptFilter) {
-    where.departmentId = deptFilter
-  }
-  if (search) {
-    where.visitor = {
-      OR: [
-        { name: { contains: search } },
-        { phone: { contains: search } },
-        { email: { contains: search } },
-      ],
-    }
+  const filters = {
+    status: searchParams.get("status") || undefined,
+    department: searchParams.get("department") || undefined,
+    search: searchParams.get("search") || undefined,
+    onlyMine: searchParams.get("mine") === "1"
   }
 
-  const cards = await db.followUpCard.findMany({
-    where,
-    orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
-    include: {
-      visitor: true,
-      department: true,
-      volunteer: { select: { id: true, name: true, phone: true } },
-      supervisor: { select: { id: true, name: true, phone: true } },
-      history: {
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      },
-    },
-  })
-
-  return NextResponse.json({ cards })
+  try {
+    const cards = await CardService.listCards(user, filters)
+    return NextResponse.json({ cards })
+  } catch (e: any) {
+    return NextResponse.json({ error: "Erro interno ao buscar cards" }, { status: 500 })
+  }
 }
 
 export async function POST(req: NextRequest) {
-  // Cria card manualmente (supervisor/admin pode direcionar novo card para dept)
   const user = await getSessionUser()
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
-  if (user.role !== ROLES.SUPERVISOR && user.role !== ROLES.ADMIN && user.role !== ROLES.RECEPCAO) {
-    return NextResponse.json({ error: "Sem permissão" }, { status: 403 })
-  }
 
   const body = await req.json()
-  const { visitorId, departmentId, volunteerId, priority, notes } = body
 
-  if (!visitorId || !departmentId) {
-    return NextResponse.json({ error: "Visitante e departamento são obrigatórios" }, { status: 400 })
+  try {
+    const card = await CardService.createCard(body, user)
+    return NextResponse.json({ card })
+  } catch (e: any) {
+    console.error(e)
+    const status = e.message === "Sem permissão" ? 403 
+                 : e.message.includes("obrigatórios") ? 400 
+                 : 500
+    return NextResponse.json({ error: e.message || "Erro interno" }, { status })
   }
-
-  let supervisorId = user.role === ROLES.SUPERVISOR ? user.id : null
-  if (!supervisorId) {
-    const supervisor = await db.user.findFirst({
-      where: {
-        role: ROLES.SUPERVISOR,
-        active: true,
-        departments: {
-          some: { id: departmentId },
-        },
-      },
-    })
-    supervisorId = supervisor?.id || null
-  }
-
-  const card = await db.followUpCard.create({
-    data: {
-      visitorId,
-      departmentId,
-      volunteerId: volunteerId || null,
-      supervisorId,
-      priority: priority || "normal",
-      notes: notes || null,
-      status: "novo",
-      history: {
-        create: {
-          userId: user.id,
-          userName: user.name,
-          action: "criado",
-          message: `Card criado manualmente por ${user.name}.`,
-        },
-      },
-    },
-  })
-
-  return NextResponse.json({ card })
 }

@@ -98,4 +98,5 @@ export const MARITAL_STATUS_LABELS: Record<string, string> = {
 
 // Sessão - tempo em segundos
 export const SESSION_DURATION = 60 * 60 * 8 // 8 horas
+export const SESSION_DURATION_LONG = 60 * 60 * 24 * 30 // 30 dias
 export const CODE_DURATION_MIN = 10 // código expira em 10 min

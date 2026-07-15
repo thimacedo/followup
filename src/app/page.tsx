@@ -7,8 +7,9 @@ import { AppShell } from "@/components/shared/AppShell"
 import { Dashboard } from "@/components/shared/Dashboard"
 import { RecepcaoForm } from "@/components/recepcao/RecepcaoForm"
 import { UsersManager } from "@/components/admin/UsersManager"
+import { ReportsManager } from "@/components/admin/ReportsManager"
 import { ROLES } from "@/lib/constants"
-import { Leaf, Loader2, ArrowLeft } from "lucide-react"
+import { Leaf, Loader2, ArrowLeft, BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function Home() {
@@ -67,7 +68,7 @@ function App({ loggedUser, activeTab, setActiveTab }: { loggedUser: any; activeT
   const user = loggedUser
 
   // Define abas conforme role
-  const tabs = []
+  const tabs: any[] = []
   if (user.role === ROLES.RECEPCAO) {
     tabs.push({ id: "cadastro", label: "Cadastrar Visitante", icon: Leaf })
     tabs.push({ id: "dashboard", label: "Cards", icon: Leaf })
@@ -76,9 +77,11 @@ function App({ loggedUser, activeTab, setActiveTab }: { loggedUser: any; activeT
   } else if (user.role === ROLES.SUPERVISOR) {
     tabs.push({ id: "dashboard", label: "Dashboard", icon: Leaf })
     tabs.push({ id: "equipe", label: "Minha Equipe", icon: Leaf })
+    tabs.push({ id: "relatorios", label: "Relatórios", icon: BarChart3 })
   } else if (user.role === ROLES.ADMIN) {
     tabs.push({ id: "dashboard", label: "Dashboard", icon: Leaf })
     tabs.push({ id: "equipe", label: "Equipe", icon: Leaf })
+    tabs.push({ id: "relatorios", label: "Relatórios", icon: BarChart3 })
     tabs.push({ id: "cadastro", label: "Lounge", icon: Leaf })
   }
 
@@ -96,6 +99,7 @@ function App({ loggedUser, activeTab, setActiveTab }: { loggedUser: any; activeT
       {safeTab === "dashboard" && <Dashboard />}
       {safeTab === "cadastro" && <RecepcaoForm onCreated={() => setActiveTab("dashboard")} />}
       {safeTab === "equipe" && <UsersManager />}
+      {safeTab === "relatorios" && <ReportsManager />}
     </AppShell>
   )
 }

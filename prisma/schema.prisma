@@ -9,122 +9,179 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ===== ENUMS (Otimização PostgreSQL) =====
+enum Role {
+  recepcao
+  supervisor
+  voluntario
+  admin
+}
+
+enum CardStatus {
+  novo
+  em_contato
+  aguardando
+  visita_agendada
+  discipulado
+  concluido
+  sem_interesse
+}
+
+enum Priority {
+  baixa
+  normal
+  alta
+}
+
+enum HistoryAction {
+  criado
+  status_alterado
+  nota
+  redistribuido
+  prioridade
+  contato
+}
+
 // ===== USUÁRIOS (Recepção, Supervisor, Voluntário) =====
 model User {
-  id           String       @id @default(cuid())
-  name         String
-  phone        String       @unique // formato: 5584999999999
-  email        String?      @unique
-  role         String       @default("voluntario") // recepcao | supervisor | voluntario | admin
-  gender       String?      // M | F
-  departments  Department[]
-  active       Boolean      @default(true)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique // formato: 5584999999999
+  email     String?  @unique
+  role      Role     @default(voluntario)
+  gender    String? // M | F
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  accessCodes    AccessCode[]
-  volunteerCards FollowUpCard[] @relation("VolunteerCards")
+  departments Department[]
+
+  accessCodes     AccessCode[]
+  volunteerCards  FollowUpCard[] @relation("VolunteerCards")
   supervisorCards FollowUpCard[] @relation("SupervisorCards")
-  histories      CardHistory[]
+  histories       CardHistory[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([role])
+  @@map("users")
 }
 
 // ===== CÓDIGOS DE ACESSO (login sem senha via WhatsApp) =====
 model AccessCode {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  code      String   // 6 dígitos
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  consumedAt DateTime?
-  createdAt DateTime @default(now())
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code       String
+  expiresAt  DateTime  @map("expires_at")
+  used       Boolean   @default(false)
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([code])
+  @@index([used])
+  @@index([userId])
+  @@map("access_codes")
 }
 
 // ===== DEPARTAMENTOS (ministérios por perfil) =====
 model Department {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  // Critérios de matching (CSV)
-  minAge      Int? // null = sem limite
-  maxAge      Int?
-  genders     String? // CSV: "M,F,Outro"
-  maritalStatuses String? // CSV: "solteiro,casado,divorciado,viuvo"
-  color       String? // hex color para visual
-  createdAt   DateTime @default(now())
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  minAge          Int?     @map("min_age")
+  maxAge          Int?     @map("max_age")
+  genders         String?
+  maritalStatuses String?  @map("marital_statuses")
+  color           String?
+  createdAt       DateTime @default(now()) @map("created_at")
 
-  users   User[]
-  cards   FollowUpCard[]
+  users User[]
+  cards FollowUpCard[]
+
+  @@map("departments")
 }
 
 // ===== VISITANTES =====
 model Visitor {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   name          String
   phone         String
   email         String?
   age           Int?
-  birthDate     DateTime?
-  gender        String? // M | F | Outro
-  maritalStatus String? // solteiro | casado | divorciado | viuvo
+  birthDate     DateTime? @map("birth_date")
+  gender        String?
+  maritalStatus String?   @map("marital_status")
   address       String?
-  hasChildren   Boolean  @default(false)
-  invitedBy     String?
-  prayerRequest String?
+  hasChildren   Boolean   @default(false) @map("has_children")
+  invitedBy     String?   @map("invited_by")
+  prayerRequest String?   @map("prayer_request")
   notes         String?
-  visitDate     DateTime @default(now())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  visitDate     DateTime  @default(now()) @map("visit_date")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   cards FollowUpCard[]
+
+  @@index([phone])
+  @@index([name])
+  @@index([visitDate])
+  @@map("visitors")
 }
 
 // ===== CARDS DE FOLLOW-UP =====
 model FollowUpCard {
-  id           String   @id @default(cuid())
-  visitorId    String
-  visitor      Visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
-  departmentId String
+  id           String     @id @default(cuid())
+  visitorId    String     @map("visitor_id")
+  visitor      Visitor    @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  departmentId String     @map("department_id")
   department   Department @relation(fields: [departmentId], references: [id])
-  volunteerId  String?
-  volunteer    User?    @relation("VolunteerCards", fields: [volunteerId], references: [id])
-  supervisorId String?
-  supervisor   User?    @relation("SupervisorCards", fields: [supervisorId], references: [id])
+  volunteerId  String?    @map("volunteer_id")
+  volunteer    User?      @relation("VolunteerCards", fields: [volunteerId], references: [id])
+  supervisorId String?    @map("supervisor_id")
+  supervisor   User?      @relation("SupervisorCards", fields: [supervisorId], references: [id])
 
-  status       String   @default("novo")
-  // novo | em_contato | aguardando | visita_agendada | discipulado | concluido | sem_interesse
-  priority     String   @default("normal") // baixa | normal | alta
-  notes        String?
-  lastContactAt DateTime?
-  nextActionAt DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  status        CardStatus @default(novo)
+  priority      Priority   @default(normal)
+  notes         String?
+  lastContactAt DateTime?  @map("last_contact_at")
+  nextActionAt  DateTime?  @map("next_action_at")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
 
   history CardHistory[]
+
+  @@index([status, departmentId])
+  @@index([visitorId])
+  @@index([volunteerId])
+  @@map("follow_up_cards")
 }
 
 // ===== HISTÓRICO DO CARD =====
 model CardHistory {
-  id         String   @id @default(cuid())
-  cardId     String
-  card       FollowUpCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  userId     String?
-  user       User?    @relation(fields: [userId], references: [id])
-  userName   String
-  action     String   // criado | status_alterado | nota | redistribuido | prioridade | contato
-  fromStatus String?
-  toStatus   String?
+  id         String        @id @default(cuid())
+  cardId     String        @map("card_id")
+  card       FollowUpCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  userId     String?       @map("user_id")
+  user       User?         @relation(fields: [userId], references: [id])
+  userName   String        @map("user_name")
+  action     HistoryAction
+  fromStatus CardStatus?   @map("from_status")
+  toStatus   CardStatus?   @map("to_status")
   message    String?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  @@index([cardId])
+  @@map("card_histories")
 }
 
 // ===== MENSAGENS DO WHATSAPP (Worker Python Playwright) =====
 model WhatsappMessage {
-  id           Int      @id @default(autoincrement())
-  telefone     String
-  codigo       String
-  status       String   @default("pendente")
-  tentativas   Int      @default(0)
+  id            Int      @id @default(autoincrement())
+  telefone      String
+  codigo        String
+  status        String   @default("pendente")
+  tentativas    Int      @default(0)
   atualizado_em DateTime @default(now())
 
   @@map("mensagens_whatsapp")

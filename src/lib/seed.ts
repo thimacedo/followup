@@ -71,23 +71,27 @@ async function main() {
 
   console.log("Departamentos criados.")
 
-  // Cria Admin de testes apenas se não houver nenhum admin cadastrado no sistema
   const adminExists = await db.user.findFirst({
-    where: { role: ROLES.ADMIN },
+    where: { email: "thi.macedo@gmail.com" },
   })
 
   if (!adminExists) {
     await db.user.create({
       data: {
-        name: "Administrador do Sistema",
+        name: "Thiago Macedo",
         phone: "5584999999999",
+        email: "thi.macedo@gmail.com",
         role: ROLES.ADMIN,
         active: true,
       },
     })
-    console.log("Admin padrão criado (telefone: 5584999999999)")
+    console.log("Admin padrão criado (thi.macedo@gmail.com)")
   } else {
-    console.log("Admin já existe. Pulando criação de admin padrão.")
+    await db.user.update({
+      where: { id: adminExists.id },
+      data: { role: ROLES.ADMIN, active: true },
+    })
+    console.log("Admin thi.macedo@gmail.com já existe. Permissões atualizadas.")
   }
 
   console.log("Seed concluído com sucesso!")

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { Leaf, Mail, ArrowLeft, Loader2, ShieldCheck } from "lucide-react"
@@ -22,6 +23,7 @@ export function LoginScreen({ onSuccess, onLoungeAccess }: Props) {
   const [userName, setUserName] = useState<string>("")
   const [userId, setUserId] = useState<string>("")
   const [devCode, setDevCode] = useState<string | null>(null)
+  const [rememberMe, setRememberMe] = useState(false)
 
   async function requestCode() {
     if (!email.trim()) {
@@ -62,7 +64,7 @@ export function LoginScreen({ onSuccess, onLoungeAccess }: Props) {
       const res = await fetch("/api/auth/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, code }),
+        body: JSON.stringify({ userId, code, rememberMe }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -122,6 +124,16 @@ export function LoginScreen({ onSuccess, onLoungeAccess }: Props) {
                     Use o e-mail que foi cadastrado pelo seu supervisor.
                   </p>
                 </div>
+                <div className="flex items-center space-x-2 pb-2">
+                  <Checkbox 
+                    id="remember" 
+                    checked={rememberMe} 
+                    onCheckedChange={(c) => setRememberMe(c as boolean)} 
+                  />
+                  <Label htmlFor="remember" className="text-sm cursor-pointer text-slate-600 dark:text-slate-300">
+                    Manter conectado neste computador
+                  </Label>
+                </div>
                 <Button
                   className="w-full bg-emerald-600 hover:bg-emerald-700"
                   disabled={loading}
@@ -156,6 +168,11 @@ export function LoginScreen({ onSuccess, onLoungeAccess }: Props) {
                       <InputOTPSlot index={5} />
                     </InputOTPGroup>
                   </InputOTP>
+                  {devCode && (
+                    <div className="mt-4 p-2 bg-slate-100 dark:bg-slate-800 rounded text-xs text-center font-mono text-slate-500" data-testid="dev-code">
+                      [Dev] Código: {devCode}
+                    </div>
+                  )}
                 </div>
 
                 <Button

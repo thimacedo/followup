@@ -105,7 +105,7 @@ export function AppShell({ activeTab, onTabChange, tabs, children }: Props) {
             <div className="border-t my-2" />
             <div className="px-3 py-2 text-xs text-slate-500">
               <p className="flex items-center gap-1"><Phone className="w-3 h-3" /> {formatPhoneLocal(user.phone)}</p>
-              {user.department && <p className="mt-1">{user.department.name}</p>}
+                {user?.departments && user.departments.length > 0 && <span className="hidden md:inline"> · {user.departments.map(d => d.name).join(", ")}</span>}
             </div>
             <Button variant="ghost" onClick={logout} className="justify-start text-rose-600">
               <LogOut className="w-4 h-4 mr-2" /> Sair

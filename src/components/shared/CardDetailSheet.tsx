@@ -65,7 +65,7 @@ interface Props {
   onUpdated: () => void
   onDeleted: () => void
   // Lista de voluntários para o supervisor atribuir
-  volunteers?: { id: string; name: string; phone: string }[]
+  volunteers?: { id: string; name: string; phone: string; gender?: string | null; departments?: any[]; departmentId?: string | null }[]
 }
 
 const ACTION_LABELS: Record<string, string> = {
@@ -92,7 +92,7 @@ export function CardDetailSheet({ cardId, open, onOpenChange, onUpdated, onDelet
   const isManager = user?.role === "supervisor" || user?.role === "admin"
   const isLounge = user?.role === "recepcao"
   const canManageDept = isManager || isLounge
-  const canEdit = !!user && (isManager || card?.volunteerId === user.id || (!card?.volunteer && card?.departmentId === user?.departmentId))
+  const canEdit = !!user && (isManager || card?.volunteerId === user.id || (!card?.volunteer && user?.departments?.some(d => d.id === card?.departmentId)))
 
   useEffect(() => {
     if (cardId) setCurrentCardId(cardId)

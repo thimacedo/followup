@@ -9,8 +9,7 @@ export interface SessionUser {
   name: string
   phone: string
   role: Role
-  departmentId: string | null
-  department: { id: string; name: string; color?: string | null } | null
+  departments: { id: string; name: string; color?: string | null }[]
 }
 
 interface AppState {
