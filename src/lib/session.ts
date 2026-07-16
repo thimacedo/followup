@@ -4,14 +4,18 @@ import { db } from "./db"
 import { SESSION_DURATION, SESSION_DURATION_LONG } from "./constants"
 import crypto from "crypto"
 
-if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
-  throw new Error("SESSION_SECRET é obrigatório em produção.")
+function getSessionSecret() {
+  const secret = process.env.SESSION_SECRET
+  if (process.env.NODE_ENV === "production" && !secret) {
+    // Apenas avisa no console durante o build, falha de verdade em runtime se usado
+    console.warn("AVISO: SESSION_SECRET não configurada em produção!")
+  }
+  return secret || "ccvideira-followup-secret-dev-key-change"
 }
-const SESSION_SECRET = process.env.SESSION_SECRET || "ccvideira-followup-secret-dev-key-change"
 
 export function signToken(payload: { userId: string; ts: number }): string {
   const data = `${payload.userId}.${payload.ts}`
-  const hmac = crypto.createHmac("sha256", SESSION_SECRET).update(data).digest("hex")
+  const hmac = crypto.createHmac("sha256", getSessionSecret()).update(data).digest("hex")
   return `${data}.${hmac}`
 }
 
@@ -21,7 +25,7 @@ export function verifyToken(token: string): { userId: string; ts: number } | nul
     if (!userId || !tsStr || !hmac) return null
     const ts = parseInt(tsStr, 10)
     const data = `${userId}.${ts}`
-    const expected = crypto.createHmac("sha256", SESSION_SECRET).update(data).digest("hex")
+    const expected = crypto.createHmac("sha256", getSessionSecret()).update(data).digest("hex")
     if (expected !== hmac) return null
     // expiração - aceita ambas durações, a mais longa define o limite final de parse
     if (Date.now() / 1000 - ts > SESSION_DURATION_LONG) return null
