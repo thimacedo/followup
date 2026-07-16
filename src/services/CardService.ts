@@ -3,6 +3,21 @@ import { ROLES } from "@/lib/constants"
 
 export class CardService {
   /**
+   * Verifica se o usuário tem acesso ao card
+   */
+  static canAccessCard(user: any, card: any): boolean {
+    if (user.role === ROLES.ADMIN || user.role === ROLES.SUPERVISOR || user.role === ROLES.RECEPCAO) {
+      return true
+    }
+    if (user.role === ROLES.VOLUNTARIO) {
+      const isMyCard = card.volunteerId === user.id
+      const isFreeInMyDept = !card.volunteerId && user.departments?.some((d: any) => d.id === card.departmentId)
+      return isMyCard || isFreeInMyDept
+    }
+    return false
+  }
+
+  /**
    * Lista cards baseados na permissão do usuário
    */
   static async listCards(user: any, filters: { status?: string; department?: string; search?: string; onlyMine?: boolean }) {

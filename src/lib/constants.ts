@@ -61,7 +61,7 @@ export const STATUS_ORDER = [
   "visita_agendada",
   "discipulado",
   "concluido",
-  "sem_interresse",
+  "sem_interesse",
 ]
 
 export const PRIORITIES = {

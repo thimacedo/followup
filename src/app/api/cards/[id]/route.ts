@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSessionUser } from "@/lib/session"
 import { ROLES, STATUS_LABELS } from "@/lib/constants"
+import { CardService } from "@/services/CardService"
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser()
@@ -33,6 +34,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     },
   })
   if (!card) return NextResponse.json({ error: "Card não encontrado" }, { status: 404 })
+
+  if (!CardService.canAccessCard(user, card)) {
+    return NextResponse.json({ error: "Sem permissão para acessar este card" }, { status: 403 })
+  }
+
   return NextResponse.json({ card })
 }
 
@@ -174,13 +180,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     })
   }
 
-  // Voluntário só pode mexer nos cards que lhe pertencem OU sem dono do seu dept
-  if (isVoluntario) {
-    const isMyCard = card.volunteerId === user.id
-    const isFreeInMyDept = !card.volunteerId && user.departments?.some(d => d.id === card.departmentId)
-    if (!isMyCard && !isFreeInMyDept) {
-      return NextResponse.json({ error: "Sem permissão para editar este card" }, { status: 403 })
-    }
+  if (!CardService.canAccessCard(user, card)) {
+    return NextResponse.json({ error: "Sem permissão para editar este card" }, { status: 403 })
   }
 
   const updated = await db.followUpCard.update({

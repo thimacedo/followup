@@ -7,7 +7,7 @@ Este é o sistema de acompanhamento (follow-up) de novos visitantes da CCVideira
 ## 🚀 Tecnologias Utilizadas
 
 - **Framework**: [Next.js](https://nextjs.org/) (App Router + React 19)
-- **Banco de Dados**: [SQLite](https://www.sqlite.org/) (ideal para facilidade de deploy local e testes rápidos)
+- **Banco de Dados**: [PostgreSQL](https://www.postgresql.org/)
 - **ORM**: [Prisma](https://www.prisma.io/)
 - **Runtime & Gerenciador de Pacotes**: [Bun](https://bun.sh/)
 - **UI & Estilização**: TailwindCSS + Shadcn/ui + Lucide Icons
@@ -25,13 +25,17 @@ bun install
 ```
 
 ### 3. Configurar Variáveis de Ambiente
-Crie um arquivo `.env` na raiz do projeto com o seguinte conteúdo:
+Copie o arquivo `.env.example` para `.env` e ajuste os valores para o seu ambiente (é necessário um banco PostgreSQL rodando):
+```bash
+cp .env.example .env
+```
 ```env
-DATABASE_URL="file:./db/custom.db"
+DATABASE_URL="postgresql://usuario:senha@localhost:5432/followup?schema=public"
+SESSION_SECRET="troque_por_um_valor_aleatorio_forte"
 ```
 
 ### 4. Inicializar o Banco de Dados e Rodar o Seed
-Rode o push do banco para criar as tabelas do SQLite e execute o seed oficial do sistema para popular os departamentos e criar o Administrador de testes:
+Rode o push do banco para criar as tabelas no PostgreSQL e execute o seed oficial do sistema para popular os departamentos e criar o Administrador de testes:
 ```bash
 bun run db:push
 bun x prisma db seed

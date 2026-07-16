@@ -122,7 +122,6 @@ export class AuthService {
     const accessCode = await db.accessCode.findFirst({
       where: {
         userId: user.id,
-        code: code.trim(),
         used: false,
         expiresAt: { gt: new Date() },
       },
@@ -130,7 +129,24 @@ export class AuthService {
     })
 
     if (!accessCode) {
-      throw new Error("Código inválido ou expirado")
+      throw new Error("Nenhum código ativo encontrado")
+    }
+
+    if (accessCode.code !== code.trim()) {
+      const attempts = (accessCode.attempts || 0) + 1
+      if (attempts >= 5) {
+        await db.accessCode.update({
+          where: { id: accessCode.id },
+          data: { used: true, attempts },
+        })
+        throw new Error("Limite de tentativas excedido. Solicite um novo código.")
+      } else {
+        await db.accessCode.update({
+          where: { id: accessCode.id },
+          data: { attempts },
+        })
+        throw new Error("Código inválido")
+      }
     }
 
     await db.accessCode.update({

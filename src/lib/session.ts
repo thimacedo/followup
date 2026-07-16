@@ -4,6 +4,9 @@ import { db } from "./db"
 import { SESSION_DURATION, SESSION_DURATION_LONG } from "./constants"
 import crypto from "crypto"
 
+if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
+  throw new Error("SESSION_SECRET é obrigatório em produção.")
+}
 const SESSION_SECRET = process.env.SESSION_SECRET || "ccvideira-followup-secret-dev-key-change"
 
 export function signToken(payload: { userId: string; ts: number }): string {

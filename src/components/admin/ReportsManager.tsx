@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { STATUS_LABELS } from "@/lib/constants"
+import { STATUS_LABELS, PRIORITY_LABELS } from "@/lib/constants"
 import { Download, FileText, Loader2, Table as TableIcon } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
@@ -68,13 +68,20 @@ export function ReportsManager() {
     }
 
     const doc = new jsPDF()
-    doc.setFontSize(18)
-    doc.text("Relatório de Follow-up - CCVideira", 14, 22)
-    doc.setFontSize(11)
-    doc.text(`Período: ${startDate || "Início"} até ${endDate || "Hoje"}`, 14, 30)
-    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })}`, 14, 36)
+    doc.setFontSize(22)
+    doc.setTextColor(5, 150, 105) // emerald-600
+    doc.text("CCVideira - FollowUp", 14, 22)
+    
+    doc.setFontSize(14)
+    doc.setTextColor(50, 50, 50)
+    doc.text("Relatório de Acompanhamento", 14, 32)
+    
+    doc.setFontSize(10)
+    doc.setTextColor(100, 100, 100)
+    doc.text(`Período: ${startDate ? format(new Date(startDate), "dd/MM/yyyy") : "Início"} até ${endDate ? format(new Date(endDate), "dd/MM/yyyy") : "Hoje"}`, 14, 40)
+    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })}`, 14, 46)
 
-    const tableColumn = ["Data", "Visitante", "Telefone", "Departamento", "Voluntário", "Status"]
+    const tableColumn = ["Data", "Visitante", "Telefone", "Departamento", "Voluntário", "Status", "Prioridade"]
     const tableRows = cards.map((c) => [
       format(new Date(c.createdAt), "dd/MM/yyyy", { locale: ptBR }),
       c.visitor?.name || "-",
@@ -82,10 +89,11 @@ export function ReportsManager() {
       c.department?.name || "-",
       c.volunteer?.name || "Sem voluntário",
       STATUS_LABELS[c.status] || c.status,
+      PRIORITY_LABELS[c.priority] || c.priority,
     ])
 
     autoTable(doc, {
-      startY: 40,
+      startY: 52,
       head: [tableColumn],
       body: tableRows,
       theme: "striped",
@@ -110,7 +118,7 @@ export function ReportsManager() {
       "Voluntário": c.volunteer?.name || "",
       "Supervisor": c.supervisor?.name || "",
       "Status": STATUS_LABELS[c.status] || c.status,
-      "Prioridade": c.priority,
+      "Prioridade": PRIORITY_LABELS[c.priority] || c.priority,
     }))
 
     const csv = Papa.unparse(dataToExport, { delimiter: ";" })

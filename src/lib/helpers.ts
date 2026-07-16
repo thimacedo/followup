@@ -1,4 +1,5 @@
 // Helpers gerais
+import crypto from "crypto"
 
 export function normalizePhone(phone: string): string {
   // Remove tudo que não é dígito
@@ -46,7 +47,7 @@ export function formatPhoneLocal(phone: string): string {
 
 export function generateAccessCode(): string {
   // 6 dígitos
-  return Math.floor(100000 + Math.random() * 900000).toString()
+  return crypto.randomInt(100000, 1000000).toString()
 }
 
 export function whatsappLink(phone: string, message?: string): string {

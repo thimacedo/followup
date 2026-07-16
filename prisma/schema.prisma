@@ -36,6 +36,7 @@ enum Priority {
 enum HistoryAction {
   criado
   status_alterado
+  departamento_alterado
   nota
   redistribuido
   prioridade
@@ -73,6 +74,7 @@ model AccessCode {
   userId     String    @map("user_id")
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   code       String
+  attempts   Int       @default(0)
   expiresAt  DateTime  @map("expires_at")
   used       Boolean   @default(false)
   consumedAt DateTime? @map("consumed_at")
@@ -151,6 +153,11 @@ model FollowUpCard {
 
   history CardHistory[]
 
+  alerts            CardAlert[]
+  approachDraft     CardApproachDraft?
+  priorityScreening CardPriorityScreening?
+  historySummary    CardHistorySummary?
+
   @@index([status, departmentId])
   @@index([visitorId])
   @@index([volunteerId])
@@ -185,4 +192,66 @@ model WhatsappMessage {
   atualizado_em DateTime @default(now())
 
   @@map("mensagens_whatsapp")
+}
+
+// ===== INFRA DE AGENTES (aditivo, não toca nas tabelas existentes) =====
+
+model AgentRun {
+  id         String    @id @default(cuid())
+  agent      String    // "orphan_card" | "daily_summary" | "weekly_summary" | "approach_draft" | "priority_screening" | "history_summary"
+  status     String    @default("success") // success | error | dry_run | running
+  detail     String?   @db.Text
+  itemsCount Int       @default(0)
+  startedAt  DateTime  @default(now()) @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+
+  @@index([agent, startedAt])
+  @@map("agent_runs")
+}
+
+model CardAlert {
+  id     String       @id @default(cuid())
+  cardId String       @map("card_id")
+  card   FollowUpCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  type   String       // "orphan_24h" | "orphan_48h"
+  sentAt DateTime     @default(now()) @map("sent_at")
+
+  @@index([cardId, type])
+  @@map("card_alerts")
+}
+
+model CardApproachDraft {
+  id          String       @id @default(cuid())
+  cardId      String       @unique @map("card_id")
+  card        FollowUpCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  draftText   String       @db.Text
+  model       String       // qual LLM gerou (auditoria/custo)
+  generatedAt DateTime     @default(now()) @map("generated_at")
+  dismissed   Boolean      @default(false) // voluntário marcou "não vou usar"
+
+  @@map("card_approach_drafts")
+}
+
+model CardPriorityScreening {
+  id          String       @id @default(cuid())
+  cardId      String       @unique @map("card_id")
+  card        FollowUpCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  suggested   Priority
+  reasoning   String       @db.Text
+  reviewed    Boolean      @default(false) // supervisor já olhou a sugestão
+  accepted    Boolean?     // null = não decidiu, true/false = decisão registrada
+  generatedAt DateTime     @default(now()) @map("generated_at")
+
+  @@map("card_priority_screenings")
+}
+
+model CardHistorySummary {
+  id           String       @id @default(cuid())
+  cardId       String       @unique @map("card_id")
+  card         FollowUpCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  summaryText  String       @db.Text
+  throughCount Int          // nº de entradas de CardHistory existentes quando foi gerado
+  generatedAt  DateTime     @default(now()) @map("generated_at")
+
+  @@map("card_history_summaries")
 }
