@@ -54,16 +54,16 @@ O projeto estará rodando em [http://localhost:3000](http://localhost:3000).
 
 ## 🔑 Fluxo de Autenticação Sem Senha
 
-O sistema utiliza um fluxo de autenticação seguro e simplificado via WhatsApp (Access Codes):
-1. O usuário informa seu telefone cadastrado.
-2. O sistema gera um código numérico de 6 dígitos criptograficamente seguro, de uso único (com expiração de 10 minutos). Há um limite rígido de **5 tentativas erradas**, após o qual o código é invalidado por segurança.
-3. **Ambiente de Produção**: O sistema gera um link direcionando para o WhatsApp do usuário contendo o código para que ele copie e faça o login. A configuração `SESSION_SECRET` é checada e obrigatória.
-4. **Ambiente de Desenvolvimento (Local)**: Para facilitar o desenvolvimento e testes locais com números de teste fictícios, o sistema exibe o **código diretamente na tela** de login se o ambiente não for produção (`process.env.NODE_ENV !== "production"`).
+O sistema utiliza um fluxo de autenticação seguro e simplificado via **E-mail (Código OTP)**:
+1. O usuário informa seu e-mail previamente cadastrado no sistema.
+2. O sistema gera um código numérico de 6 dígitos criptograficamente seguro, de uso único (com expiração de 10 minutos) e o envia via e-mail utilizando `Nodemailer`. Há mecanismos de segurança implementados no backend para evitar ataques de força bruta, como limite de tentativas erradas e bloqueio temporário (Rate Limiting).
+3. **Ambiente de Produção**: O envio de e-mail é realizado por um servidor SMTP (como Mailtrap, Resend, Amazon SES, etc.). A sessão criptografada exige a presença da variável de ambiente `SESSION_SECRET`.
+4. **Ambiente de Desenvolvimento (Local)**: Para facilitar o desenvolvimento e os testes E2E, se a variável de ambiente não estiver no modo produção ou se a porta local for detectada, o código é exibido **diretamente na tela** de login, pulando o disparo do e-mail.
 
 ### 👥 Usuários de Teste Iniciais (Seed)
-Ao rodar o seed, o seguinte usuário é criado por padrão:
+Ao rodar o seed (`bun x prisma db seed`), o seguinte usuário é criado/atualizado por padrão:
 - **Papel**: Administrador (Admin)
-- **Telefone**: `5584999999999` (Use este telefone para acessar o painel pela primeira vez)
+- **E-mail**: `thi.macedo@gmail.com` (Use este e-mail para acessar o painel pela primeira vez)
 
 ---
 
@@ -109,6 +109,7 @@ Quando um novo visitante é cadastrado pelo Lounge, o sistema calcula automatica
   - **Multi-direcionamento**: É possível adicionar o mesmo visitante a outros departamentos de forma rápida diretamente pela ficha dele.
   - **Navegação rápida**: Badges coloridos mostram todos os acompanhamentos ativos do visitante e permitem alternar as fichas instantaneamente ao clicar neles.
 - **Insights de IA no Frontend**: Criação do componente `AgentInsights.tsx` injetado na interface do Card, permitindo aos voluntários interagir com rascunhos de abordagem, ler resumos operacionais automáticos e à liderança aceitar ou rejeitar triagens de prioridade de forma fluida.
+- **Cobertura de Testes E2E Automatizada**: Utilização intensiva do framework Playwright (`tests/e2e/full-flow.spec.ts`) validando a autenticação por OTP invisível e toda a saga fim-a-fim interagindo com a UI de recepção, criação do card no Kanban e atualização por voluntários.
 
 ---
 
