@@ -32,6 +32,9 @@ cp .env.example .env
 ```env
 DATABASE_URL="postgresql://usuario:senha@localhost:5432/followup?schema=public"
 SESSION_SECRET="troque_por_um_valor_aleatorio_forte"
+MISTRAL_API_KEY="sua_chave_mistral_aqui"
+GROQ_API_KEY="sua_chave_groq_aqui_opcional"
+NTFY_TOPIC="followup_alertas"
 ```
 
 ### 4. Inicializar o Banco de Dados e Rodar o Seed
@@ -53,8 +56,8 @@ O projeto estará rodando em [http://localhost:3000](http://localhost:3000).
 
 O sistema utiliza um fluxo de autenticação seguro e simplificado via WhatsApp (Access Codes):
 1. O usuário informa seu telefone cadastrado.
-2. O sistema gera um código numérico de 6 dígitos de uso único (com expiração de 10 minutos).
-3. **Ambiente de Produção**: O sistema gera um link direcionando para o WhatsApp do usuário contendo o código para que ele copie e faça o login.
+2. O sistema gera um código numérico de 6 dígitos criptograficamente seguro, de uso único (com expiração de 10 minutos). Há um limite rígido de **5 tentativas erradas**, após o qual o código é invalidado por segurança.
+3. **Ambiente de Produção**: O sistema gera um link direcionando para o WhatsApp do usuário contendo o código para que ele copie e faça o login. A configuração `SESSION_SECRET` é checada e obrigatória.
 4. **Ambiente de Desenvolvimento (Local)**: Para facilitar o desenvolvimento e testes locais com números de teste fictícios, o sistema exibe o **código diretamente na tela** de login se o ambiente não for produção (`process.env.NODE_ENV !== "production"`).
 
 ### 👥 Usuários de Teste Iniciais (Seed)
@@ -105,6 +108,7 @@ Quando um novo visitante é cadastrado pelo Lounge, o sistema calcula automatica
   - **Alteração direta**: Gestores e Lounge podem alterar o departamento do acompanhamento aberto. Ao alterar, o voluntário anterior é limpo para evitar inconsistências e o supervisor correspondente do novo departamento é atribuído.
   - **Multi-direcionamento**: É possível adicionar o mesmo visitante a outros departamentos de forma rápida diretamente pela ficha dele.
   - **Navegação rápida**: Badges coloridos mostram todos os acompanhamentos ativos do visitante e permitem alternar as fichas instantaneamente ao clicar neles.
+- **Insights de IA no Frontend**: Criação do componente `AgentInsights.tsx` injetado na interface do Card, permitindo aos voluntários interagir com rascunhos de abordagem, ler resumos operacionais automáticos e à liderança aceitar ou rejeitar triagens de prioridade de forma fluida.
 
 ---
 
