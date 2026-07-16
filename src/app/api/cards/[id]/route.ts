@@ -33,6 +33,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       history: {
         orderBy: { createdAt: "desc" },
       },
+      priorityScreening: true,
     },
   })
   if (!card) return NextResponse.json({ error: "Card não encontrado" }, { status: 404 })

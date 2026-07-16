@@ -15,6 +15,7 @@ import { formatPhoneLocal, whatsappLink, formatDateTime, initials, avatarColor }
 import { toast } from "sonner"
 import { useAppStore } from "@/lib/store"
 import { Input } from "@/components/ui/input"
+import { AgentInsights } from "./AgentInsights"
 
 interface HistoryItem {
   id: string
@@ -55,6 +56,7 @@ interface CardDetail {
   department?: { id: string; name: string; color?: string | null } | null
   volunteer?: { id: string; name: string; phone: string } | null
   supervisor?: { id: string; name: string; phone: string } | null
+  priorityScreening?: { suggested: string; reasoning: string; reviewed: boolean; accepted: boolean | null } | null
   history: HistoryItem[]
 }
 
@@ -410,8 +412,17 @@ export function CardDetailSheet({ cardId, open, onOpenChange, onUpdated, onDelet
                 </div>
               )}
 
+              {/* Insights de IA (Agent) */}
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
+                <AgentInsights 
+                  cardId={card.id} 
+                  priorityScreening={card.priorityScreening} 
+                  onScreeningReviewed={() => loadCard(card.id)} 
+                />
+              </div>
+
               {/* Departamentos do Visitante */}
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
                 <p className="text-xs font-medium text-slate-500 mb-1.5">Acompanhamentos ativos:</p>
                 <div className="flex flex-wrap gap-1.5 items-center">
                   {(card.visitor as any).cards?.map((c: any) => (
