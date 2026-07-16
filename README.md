@@ -106,4 +106,15 @@ Quando um novo visitante é cadastrado pelo Lounge, o sistema calcula automatica
   - **Multi-direcionamento**: É possível adicionar o mesmo visitante a outros departamentos de forma rápida diretamente pela ficha dele.
   - **Navegação rápida**: Badges coloridos mostram todos os acompanhamentos ativos do visitante e permitem alternar as fichas instantaneamente ao clicar neles.
 
+---
 
+## 🤖 Agentes de Inteligência Artificial
+
+O sistema conta com um esquadrão de IAs invisíveis baseadas no LLM da Mistral, projetadas para otimizar o tempo e as respostas da liderança e dos voluntários.
+
+1. **Rascunho de Abordagem**: Quando um voluntário recebe um card (ou solicita ativamente na interface), a IA avalia o perfil do visitante (idade, departamento, observações, pedido de oração) e gera uma mensagem empática para o primeiro contato no WhatsApp.
+2. **Resumo Operacional**: Para acompanhamentos de longa duração (cards com extenso histórico de interações), a IA consolida todo o andamento do card em duas frases simples (Situação atual e Próximo Passo), ajudando o supervisor a não precisar ler dezenas de logs.
+3. **Triagem de Prioridade**: Rodando automaticamente a cada poucas horas, a IA examina novos cards em busca de termos sensíveis (luto, depressão, crise, internações). Caso detecte, sugere a elevação de prioridade para `alta`, destacando o caso com um banner na interface para revisão do supervisor.
+4. **Agentes de Background (Cron)**: Disparam verificações autônomas (via GitHub Actions e ntfy), emitindo alertas diários ou semanais com estatísticas frescas e notificações de *Orphan Cards* (cards abertos há 24h ou 48h sem atribuição de voluntário).
+
+**Privacidade de Dados**: Antes de enviar o contexto para os modelos da IA (Mistral/Groq), todos os e-mails, telefones do Brasil e nomes dos visitantes são substituídos de forma rigorosa por um módulo de anonimização estrito.
