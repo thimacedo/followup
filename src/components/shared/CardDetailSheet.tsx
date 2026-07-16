@@ -542,7 +542,7 @@ export function CardDetailSheet({ cardId, open, onOpenChange, onUpdated, onDelet
                       }
                     </SelectContent>
                   </Select>
-                  <Button onClick={assignVolunteer} disabled={saving} size="icon">
+                  <Button id="assign-volunteer-btn" onClick={assignVolunteer} disabled={saving} size="icon">
                     <Save className="w-4 h-4" />
                   </Button>
                 </div>

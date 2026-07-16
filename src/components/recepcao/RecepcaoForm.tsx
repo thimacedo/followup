@@ -302,8 +302,8 @@ export function RecepcaoForm({ onCreated }: Props) {
             <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={2} placeholder="Anotações gerais..." />
           </div>
 
-          <div className="flex justify-end">
-            <Button onClick={submit} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 min-w-40">
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <Button id="submit-visitor" onClick={submit} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 min-w-40">
               {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserPlus className="w-4 h-4 mr-2" />}
               Cadastrar visitante
             </Button>
