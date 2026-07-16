@@ -1,0 +1,15 @@
+name: Agent - Orphan Cards
+
+on:
+  schedule:
+    - cron: "0 */10 * * *"
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Agent
+        run: |
+          curl -sf -X POST https://followup-nu.vercel.app/api/agents/orphan-cards \
+            -H "x-agent-secret: ${{ secrets.AGENT_CRON_SECRET }}"

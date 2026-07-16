@@ -3,10 +3,12 @@
 // PATCH - atualiza (status, voluntário, supervisor, prioridade, notas, nextActionAt)
 // DELETE - remove
 import { NextRequest, NextResponse } from "next/server"
+import { after } from "next/server"
 import { db } from "@/lib/db"
 import { getSessionUser } from "@/lib/session"
 import { ROLES, STATUS_LABELS } from "@/lib/constants"
 import { CardService } from "@/services/CardService"
+import { generateApproachDraftLogic } from "@/app/api/agents/cards/[id]/approach-draft/route"
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser()
@@ -52,7 +54,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const card = await db.followUpCard.findUnique({ 
     where: { id },
-    include: { visitor: true }
+    include: { visitor: true, department: true }
   })
   if (!card) return NextResponse.json({ error: "Card não encontrado" }, { status: 404 })
 
@@ -112,6 +114,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           ? `Card atribuído a um voluntário por ${user.name}.`
           : `Card liberado (sem voluntário) por ${user.name}.`,
       })
+
+      // Se atribuiu a um voluntário válido, dispara a geração assíncrona do rascunho de abordagem
+      if (volunteerId) {
+        // Envia o processamento LLM para background sem bloquear a request via after()
+        after(async () => {
+          try {
+            await generateApproachDraftLogic(id, card);
+          } catch (e) {
+            console.error("Erro no after() gerando rascunho:", e);
+          }
+        });
+      }
     }
   }
   if (departmentId !== undefined && canManageDept) {

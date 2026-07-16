@@ -1,0 +1,23 @@
+name: Agent - Summaries
+
+on:
+  schedule:
+    - cron: "0 7 * * *"     # Diário às 7h
+    - cron: "0 7 * * 1"     # Semanal, segunda-feira às 7h
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Daily Summary
+        if: github.event.schedule == '0 7 * * *' || github.event_name == 'workflow_dispatch'
+        run: |
+          curl -sf -X POST https://followup-nu.vercel.app/api/agents/daily-summary \
+            -H "x-agent-secret: ${{ secrets.AGENT_CRON_SECRET }}"
+
+      - name: Trigger Weekly Summary
+        if: github.event.schedule == '0 7 * * 1'
+        run: |
+          curl -sf -X POST https://followup-nu.vercel.app/api/agents/weekly-summary \
+            -H "x-agent-secret: ${{ secrets.AGENT_CRON_SECRET }}"
