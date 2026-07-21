@@ -6,9 +6,15 @@ import crypto from "crypto"
 
 function getSessionSecret() {
   const secret = process.env.SESSION_SECRET
-  if (process.env.NODE_ENV === "production" && !secret) {
-    // Apenas avisa no console durante o build, falha de verdade em runtime se usado
-    console.warn("AVISO: SESSION_SECRET não configurada em produção!")
+  if (process.env.NODE_ENV === "production") {
+    if (!secret) {
+      // Nunca deixamos o app assinar/verificar sessões em produção com uma
+      // chave hardcoded e pública (estaria exposta no histórico do repo).
+      throw new Error(
+        "SESSION_SECRET não configurada em produção. Defina a variável de ambiente antes de iniciar o app."
+      )
+    }
+    return secret
   }
   return secret || "ccvideira-followup-secret-dev-key-change"
 }
@@ -26,7 +32,10 @@ export function verifyToken(token: string): { userId: string; ts: number } | nul
     const ts = parseInt(tsStr, 10)
     const data = `${userId}.${ts}`
     const expected = crypto.createHmac("sha256", getSessionSecret()).update(data).digest("hex")
-    if (expected !== hmac) return null
+    const expectedBuf = Buffer.from(expected)
+    const hmacBuf = Buffer.from(hmac)
+    if (expectedBuf.length !== hmacBuf.length) return null
+    if (!crypto.timingSafeEqual(expectedBuf, hmacBuf)) return null
     // expiração - aceita ambas durações, a mais longa define o limite final de parse
     if (Date.now() / 1000 - ts > SESSION_DURATION_LONG) return null
     return { userId, ts }

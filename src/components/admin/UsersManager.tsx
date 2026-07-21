@@ -308,7 +308,7 @@ export function UsersManager() {
       </CardContent>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto flex flex-col">
           <DialogHeader>
             <DialogTitle>{editingUser ? "Editar usuário" : "Novo usuário"}</DialogTitle>
             <DialogDescription>

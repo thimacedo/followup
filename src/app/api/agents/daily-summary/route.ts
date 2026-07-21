@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sendNtfyAlert } from "@/lib/agents/ntfy";
 import { withAgentRun } from "@/lib/agents/runLogger";
+import { verifyCronSecret } from "@/lib/agents/verifyCronSecret";
 import { subDays } from "date-fns";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const secret = req.headers.get("x-agent-secret");
-  if (secret !== process.env.AGENT_CRON_SECRET) {
+  if (!verifyCronSecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

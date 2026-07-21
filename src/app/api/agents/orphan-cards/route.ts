@@ -3,13 +3,13 @@ import { db } from "@/lib/db";
 import { sendNtfyAlert } from "@/lib/agents/ntfy";
 import { withAgentRun } from "@/lib/agents/runLogger";
 import { subHours } from "date-fns";
+import { verifyCronSecret } from "@/lib/agents/verifyCronSecret";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // 60 segundos na Vercel (limite pro) ou 10s no Hobby
 
 export async function POST(req: Request) {
-  const secret = req.headers.get("x-agent-secret");
-  if (secret !== process.env.AGENT_CRON_SECRET) {
+  if (!verifyCronSecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

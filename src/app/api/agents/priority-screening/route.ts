@@ -5,13 +5,13 @@ import { anonymizeVisitorContext } from "@/lib/agents/anonymize";
 import { withAgentRun } from "@/lib/agents/runLogger";
 import { Priority } from "@prisma/client";
 import { subHours } from "date-fns";
+import { verifyCronSecret } from "@/lib/agents/verifyCronSecret";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Máximo pro serverless Vercel
 
 export async function POST(req: Request) {
-  const secret = req.headers.get("x-agent-secret");
-  if (secret !== process.env.AGENT_CRON_SECRET) {
+  if (!verifyCronSecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
