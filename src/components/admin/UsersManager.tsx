@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+// import { formatPhoneLocal } from "@/lib/helpers"  // duplicate removed
 import { UserPlus, Users, Loader2, Phone, Pencil, Trash2, MessageCircle, KeyRound } from "lucide-react"
 import { ROLE_LABELS, ROLES } from "@/lib/constants"
 import { formatPhoneLocal, whatsappLink, initials, avatarColor } from "@/lib/helpers"
@@ -46,6 +47,17 @@ export function UsersManager() {
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    if (dialogOpen && !editingUser) {
+      const digits = form.phone.replace(/\D/g, "")
+      const last4 = digits.slice(-4)
+      const namePart = form.name.split(' ')[0].toLowerCase()
+      if (!form.password && last4.length === 4) {
+        setForm(prev => ({ ...prev, password: `${last4}${namePart}` }))
+      }
+    }
+  }, [dialogOpen, editingUser, form.phone, form.name])
 
   function openNew() {
     setEditingUser(null)
@@ -324,7 +336,10 @@ export function UsersManager() {
             </div>
             <div className="space-y-1.5">
               <Label>Telefone / WhatsApp *</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(84) 99999-9999" />
+              <Input value={form.phone} onChange={(e) => {
+                const formatted = formatPhoneLocal(e.target.value)
+                setForm({ ...form, phone: formatted })
+              }} placeholder="(84) 99999-9999" />
             </div>
             <div className="space-y-1.5">
               <Label>E-mail</Label>
