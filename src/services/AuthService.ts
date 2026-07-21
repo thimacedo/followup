@@ -205,6 +205,7 @@ export class AuthService {
         role: user.role,
         phone: user.phone,
         email: user.email,
+        mustChangePassword: user.mustChangePassword,
       },
     }
   }

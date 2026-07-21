@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useAppStore } from "@/lib/store"
 import { LoginScreen } from "@/components/auth/LoginScreen"
+import { ChangePasswordModal } from "@/components/auth/ChangePasswordModal"
 import { AppShell } from "@/components/shared/AppShell"
 import { Dashboard } from "@/components/shared/Dashboard"
 import { RecepcaoForm } from "@/components/recepcao/RecepcaoForm"
@@ -16,6 +17,7 @@ export default function Home() {
   const { user, loadingUser, setUser, setLoadingUser } = useAppStore()
   const [activeTab, setActiveTab] = useState("dashboard")
   const [showLoungePublic, setShowLoungePublic] = useState(false)
+  const [mustChangePassword, setMustChangePassword] = useState(false)
 
   // Carrega sessão atual
   useEffect(() => {
@@ -23,6 +25,7 @@ export default function Home() {
       .then((r) => r.json())
       .then((data) => {
         setUser(data.user || null)
+        if (data.user?.mustChangePassword) setMustChangePassword(true)
       })
       .catch(() => setUser(null))
       .finally(() => setLoadingUser(false))
@@ -58,10 +61,26 @@ export default function Home() {
         </div>
       )
     }
-    return <LoginScreen onSuccess={(u) => setUser(u)} onLoungeAccess={() => setShowLoungePublic(true)} />
+    return (
+      <LoginScreen
+        onSuccess={(u) => {
+          setUser(u)
+          if (u.mustChangePassword) setMustChangePassword(true)
+        }}
+        onLoungeAccess={() => setShowLoungePublic(true)}
+      />
+    )
   }
 
-  return <App loggedUser={user} activeTab={activeTab} setActiveTab={setActiveTab} />
+  return (
+    <>
+      <ChangePasswordModal
+        open={mustChangePassword}
+        onDone={() => setMustChangePassword(false)}
+      />
+      <App loggedUser={user} activeTab={activeTab} setActiveTab={setActiveTab} />
+    </>
+  )
 }
 
 function App({ loggedUser, activeTab, setActiveTab }: { loggedUser: any; activeTab: string; setActiveTab: (t: string) => void }) {

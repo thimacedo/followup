@@ -49,8 +49,9 @@ model User {
   name      String
   phone     String   @unique // formato: 5584999999999
   email        String?  @unique
-  passwordHash String?  @map("password_hash")
-  role         Role     @default(voluntario)
+  passwordHash        String?  @map("password_hash")
+  mustChangePassword  Boolean  @default(false) @map("must_change_password")
+  role                Role     @default(voluntario)
   gender    String? // M | F
   active    Boolean  @default(true)
   createdAt DateTime @default(now()) @map("created_at")

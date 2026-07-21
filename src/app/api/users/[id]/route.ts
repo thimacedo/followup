@@ -37,6 +37,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.gender !== undefined) data.gender = body.gender || null
   if (body.password) {
     data.passwordHash = await AuthService.hashPassword(body.password)
+    data.mustChangePassword = true
   }
   
   // Apenas admin muda role e departamentos

@@ -41,7 +41,10 @@ async function main() {
 
     await db.user.update({
       where: { id: user.id },
-      data: { passwordHash: await AuthService.hashPassword(password) },
+      data: {
+        passwordHash: await AuthService.hashPassword(password),
+        mustChangePassword: true,
+      },
     })
 
     const login = user.email || user.phone

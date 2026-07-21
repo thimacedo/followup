@@ -96,6 +96,7 @@ export async function POST(req: NextRequest) {
       role: finalRole,
       gender: gender || null,
       passwordHash: password ? await AuthService.hashPassword(password) : null,
+      mustChangePassword: !!password,
       departments: {
         connect: finalDeptIds.map((id) => ({ id })),
       },

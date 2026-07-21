@@ -15,6 +15,7 @@ export async function GET() {
       departmentId: firstDept?.id || null,
       department: firstDept,
       departments: (user as any).departments || [],
+      mustChangePassword: (user as any).mustChangePassword ?? false,
     },
   })
 }
