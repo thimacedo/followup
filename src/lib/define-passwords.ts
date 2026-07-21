@@ -1,8 +1,8 @@
 /**
  * Script: define-passwords.ts
- * Define senhas padrão para todos os usuários sem passwordHash.
- * Senha padrão: primeiros 6 dígitos do telefone + "@" + primeiro nome em minúsculas.
- * Exemplo: telefone 5584999887766, nome "José Silva" → "558499@jose"
+ * Define (ou redefine) senhas padrão para todos os usuários.
+ * Senha padrão: 4 últimos dígitos do telefone + primeiro nome em minúsculas sem espaços e sem acentos.
+ * Exemplo: telefone 5584999887766, nome "José Silva" → "7766jose"
  *
  * Uso: npx tsx src/lib/define-passwords.ts
  */
@@ -10,13 +10,10 @@ import { db } from "./db"
 import { AuthService } from "@/services/AuthService"
 
 async function main() {
-  const users = await db.user.findMany({
-    where: { passwordHash: null },
-    orderBy: { name: "asc" },
-  })
+  const users = await db.user.findMany({ orderBy: { name: "asc" } })
 
   if (users.length === 0) {
-    console.log("✅ Todos os usuários já possuem senha definida.")
+    console.log("Nenhum usuário encontrado.")
     return
   }
 
@@ -32,9 +29,15 @@ async function main() {
   )
 
   for (const user of users) {
-    const firstName = user.name.split(" ")[0].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    const phonePrefix = user.phone.slice(0, 6)
-    const password = `${phonePrefix}@${firstName}`
+    const firstName = user.name
+      .split(" ")[0]
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "")
+
+    const phoneSuffix = user.phone.slice(-4)
+    const password = `${phoneSuffix}${firstName}`
 
     await db.user.update({
       where: { id: user.id },
@@ -53,7 +56,7 @@ async function main() {
     "└─────────────────────────────────────┴─────────────────────┴──────────────────┘"
   )
   console.log(
-    "\n⚠️  Guarde essas senhas com segurança. Elas devem ser trocadas pelos usuários na próxima oportunidade.\n"
+    "\n⚠️  Guarde essas senhas com segurança. Devem ser trocadas pelos usuários na próxima oportunidade.\n"
   )
 }
 
