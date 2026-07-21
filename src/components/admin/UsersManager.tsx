@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { UserPlus, Users, Loader2, Phone, Pencil, Trash2, MessageCircle } from "lucide-react"
+import { UserPlus, Users, Loader2, Phone, Pencil, Trash2, MessageCircle, KeyRound } from "lucide-react"
 import { ROLE_LABELS, ROLES } from "@/lib/constants"
 import { formatPhoneLocal, whatsappLink, initials, avatarColor } from "@/lib/helpers"
 import { useAppStore } from "@/lib/store"
@@ -24,7 +24,7 @@ export function UsersManager() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<any | null>(null)
-  const [form, setForm] = useState({ name: "", phone: "", email: "", role: ROLES.VOLUNTARIO, departmentIds: [] as string[], gender: "M" })
+  const [form, setForm] = useState({ name: "", phone: "", email: "", role: ROLES.VOLUNTARIO, departmentIds: [] as string[], gender: "M", password: "" })
 
   const isAdmin = user.role === ROLES.ADMIN
 
@@ -59,6 +59,7 @@ export function UsersManager() {
       role: ROLES.VOLUNTARIO,
       departmentIds: initialDepts,
       gender: "M",
+      password: "",
     })
     setDialogOpen(true)
   }
@@ -73,6 +74,7 @@ export function UsersManager() {
       role: u.role,
       departmentIds: userDepts,
       gender: u.gender || "M",
+      password: "",
     })
     setDialogOpen(true)
   }
@@ -80,6 +82,14 @@ export function UsersManager() {
   async function save() {
     if (!form.name.trim() || !form.phone.trim()) {
       toast.error("Nome e telefone são obrigatórios")
+      return
+    }
+    if (!editingUser && !form.password.trim()) {
+      toast.error("Defina uma senha para o novo usuário")
+      return
+    }
+    if (form.password && form.password.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres")
       return
     }
     try {
@@ -106,7 +116,7 @@ export function UsersManager() {
           toast.error(d.error || "Erro ao cadastrar")
           return
         }
-        toast.success("Usuário cadastrado! Ele já pode acessar com o e-mail.")
+        toast.success("Usuário cadastrado! Senha definida.")
       }
       setDialogOpen(false)
       load()
@@ -303,8 +313,8 @@ export function UsersManager() {
             <DialogTitle>{editingUser ? "Editar usuário" : "Novo usuário"}</DialogTitle>
             <DialogDescription>
               {editingUser
-                ? "Atualize os dados do membro da equipe."
-                : "Cadastre um novo voluntário, supervisor ou membro do Lounge. Ele acessará o sistema via e-mail, sem senha."}
+                ? "Atualize os dados. Preencha a senha apenas se quiser alterá-la."
+                : "Preencha os dados e defina a senha inicial do usuário."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -317,8 +327,18 @@ export function UsersManager() {
               <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(84) 99999-9999" />
             </div>
             <div className="space-y-1.5">
-              <Label>E-mail *</Label>
+              <Label>E-mail</Label>
               <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="seu@email.com" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{editingUser ? "Nova senha (deixe vazio para não alterar)" : "Senha *"}</Label>
+              <Input
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder={editingUser ? "••••••••" : "Mínimo 6 caracteres"}
+                autoComplete="new-password"
+              />
             </div>
             {isAdmin && (
               <div className="space-y-1.5">

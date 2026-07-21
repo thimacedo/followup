@@ -1,6 +1,7 @@
 // Seed: departamentos de follow-up por perfil de visitante - CCVideira
 import { db } from "./db"
 import { ROLES } from "./constants"
+import { AuthService } from "@/services/AuthService"
 
 async function main() {
   console.log("Iniciando seed de departamentos...")
@@ -83,13 +84,21 @@ async function main() {
         email: "thi.macedo@gmail.com",
         role: ROLES.ADMIN,
         active: true,
+        passwordHash: await AuthService.hashPassword("admin123"),
       },
     })
-    console.log("Admin padrão criado (thi.macedo@gmail.com)")
+    console.log("Admin padrão criado (thi.macedo@gmail.com / admin123)")
   } else {
     await db.user.update({
       where: { id: adminExists.id },
-      data: { role: ROLES.ADMIN, active: true },
+      data: {
+        role: ROLES.ADMIN,
+        active: true,
+        // Só define senha se não tiver uma ainda
+        ...(!adminExists.passwordHash
+          ? { passwordHash: await AuthService.hashPassword("admin123") }
+          : {}),
+      },
     })
     console.log("Admin thi.macedo@gmail.com já existe. Permissões atualizadas.")
   }

@@ -2,6 +2,7 @@ import { db } from "@/lib/db"
 import { generateAccessCode } from "@/lib/helpers"
 import { CODE_DURATION_MIN } from "@/lib/constants"
 import nodemailer from "nodemailer"
+import bcrypt from "bcryptjs"
 
 // 15 minutes throttle for generating a new code
 const THROTTLE_MINUTES = 15
@@ -163,5 +164,53 @@ export class AuthService {
         email: user.email,
       }
     }
+  }
+  /**
+   * Simple login: accepts email or phone + password.
+   */
+  static async login(login: string, password: string) {
+    if (!login || !password) {
+      throw new Error("Login e senha são obrigatórios")
+    }
+
+    const normalized = login.toLowerCase().trim()
+    // Tenta por e-mail, depois por telefone
+    const user = await db.user.findFirst({
+      where: {
+        OR: [
+          { email: normalized },
+          { phone: normalized },
+          { phone: login.trim() }, // aceita formato bruto
+        ],
+      },
+    })
+
+    if (!user || !user.active) {
+      throw new Error("Usuário não encontrado ou inativo")
+    }
+
+    if (!user.passwordHash) {
+      throw new Error("Senha não definida. Solicite ao administrador.")
+    }
+
+    const valid = await bcrypt.compare(password, user.passwordHash)
+    if (!valid) {
+      throw new Error("Senha inválida")
+    }
+
+    return {
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        phone: user.phone,
+        email: user.email,
+      },
+    }
+  }
+
+  /** Hash de senha para persistir no banco. */
+  static async hashPassword(plain: string): Promise<string> {
+    return bcrypt.hash(plain, 10)
   }
 }

@@ -1,11 +1,12 @@
 // /api/users
 // GET - lista usuários (apenas supervisor/admin)
-// POST - cadastra novo usuário (voluntário/supervisor/lounge) - sem senha
+// POST - cadastra novo usuário
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSessionUser } from "@/lib/session"
 import { normalizePhone } from "@/lib/helpers"
 import { ROLES } from "@/lib/constants"
+import { AuthService } from "@/services/AuthService"
 
 export async function GET(req: NextRequest) {
   const user = await getSessionUser()
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
   
   // Admin cadastra qualquer um; supervisor cadastra apenas voluntários do seu dept
   const body = await req.json()
-  const { name, phone, email, role, departmentIds, gender } = body
+  const { name, phone, email, role, departmentIds, gender, password } = body
 
   if (!name || !phone) {
     return NextResponse.json({ error: "Nome e telefone são obrigatórios" }, { status: 400 })
@@ -94,6 +95,7 @@ export async function POST(req: NextRequest) {
       email: normalizedEmail,
       role: finalRole,
       gender: gender || null,
+      passwordHash: password ? await AuthService.hashPassword(password) : null,
       departments: {
         connect: finalDeptIds.map((id) => ({ id })),
       },

@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { getSessionUser } from "@/lib/session"
 import { normalizePhone } from "@/lib/helpers"
 import { ROLES } from "@/lib/constants"
+import { AuthService } from "@/services/AuthService"
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser()
@@ -34,6 +35,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
   if (body.gender !== undefined) data.gender = body.gender || null
+  if (body.password) {
+    data.passwordHash = await AuthService.hashPassword(body.password)
+  }
   
   // Apenas admin muda role e departamentos
   if (user.role === ROLES.ADMIN) {
